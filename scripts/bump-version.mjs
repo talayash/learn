@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Sets the same version in package.json, plugin.json and marketplace.json.
+// Sets the same version in package.json and the Claude Code and Codex manifests.
 // Edits the text in place so each file keeps its own formatting.
 // Usage: npm run bump -- 0.2.0
 import { readFileSync, writeFileSync } from "node:fs";
@@ -11,7 +11,9 @@ if (!/^\d+\.\d+\.\d+$/.test(version || "")) {
 }
 
 // Each file has exactly one "version" field.
-for (const path of ["package.json", ".claude-plugin/plugin.json", ".claude-plugin/marketplace.json"]) {
+for (const path of [
+  "package.json", ".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", ".codex-plugin/plugin.json",
+]) {
   const text = readFileSync(path, "utf8");
   const fields = text.match(/"version":\s*"[^"]*"/g) || [];
   if (fields.length !== 1) {

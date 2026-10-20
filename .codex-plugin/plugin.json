@@ -1,0 +1,21 @@
+{
+  "name": "learn",
+  "version": "0.1.0",
+  "description": "Turn what you just built into a visual lesson. $learn analyzes your session and diff, then opens a browser page with architecture and flow diagrams, the design patterns you used, your DB and cache choices, and a short quiz.",
+  "author": {
+    "name": "Tal Ayash",
+    "url": "https://github.com/talayash"
+  },
+  "homepage": "https://github.com/talayash/learn",
+  "repository": "https://github.com/talayash/learn",
+  "license": "MIT",
+  "keywords": ["learning", "education", "architecture", "design-patterns", "system-design", "diagrams", "mermaid"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Learn",
+    "shortDescription": "Turn what you just built into a visual lesson",
+    "developerName": "Tal Ayash",
+    "category": "Learning",
+    "defaultPrompt": "Explain what I just built as a visual lesson"
+  }
+}
