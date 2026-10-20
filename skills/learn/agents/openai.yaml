@@ -1,0 +1,5 @@
+# Codex metadata for this skill. Claude Code ignores this file.
+interface:
+  display_name: "Learn"
+  short_description: "Turn what you just built into a visual lesson"
+  default_prompt: "Explain what I just built as a visual lesson"

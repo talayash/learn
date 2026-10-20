@@ -4,7 +4,7 @@
 
 **Type `/learn` after you build something, and get a visual lesson about what you just did.**
 
-A Claude Code plugin. It reads your session and your git diff, then opens a page in your browser that explains your work: the architecture, how a request moves through it, the design patterns you used (with links to the exact lines), your database and cache choices, the words you should know, and a short quiz.
+A plugin for Claude Code and Codex. It reads your session and your git diff, then opens a page in your browser that explains your work: the architecture, how a request moves through it, the design patterns you used (with links to the exact lines), your database and cache choices, the words you should know, and a short quiz.
 
 ![The lesson page: title, three-line summary, and section navigation](assets/hero.png)
 
@@ -18,14 +18,23 @@ You shipped a feature with an AI pair. It works. Could you explain it in a stand
 
 ## Install
 
-In Claude Code:
+### Claude Code
 
 ```
 /plugin marketplace add talayash/learn
 /plugin install learn@learn
 ```
 
-Requires Node 18 or newer (Claude Code already needs it).
+### Codex
+
+```bash
+codex plugin marketplace add talayash/learn
+codex plugin add learn@learn
+```
+
+Or run `/plugins` inside Codex and install **Learn** from there. Start a new session afterwards.
+
+Requires Node 18 or newer.
 
 <details>
 <summary>Install without the plugin system</summary>
@@ -34,12 +43,15 @@ Copy the skill into your personal skills folder:
 
 ```bash
 git clone https://github.com/talayash/learn
-cp -r learn/skills/learn ~/.claude/skills/learn
+cp -r learn/skills/learn ~/.claude/skills/learn   # Claude Code
+cp -r learn/skills/learn ~/.agents/skills/learn   # Codex
 ```
 
 </details>
 
 ## Use
+
+In Codex, type `$learn` instead of `/learn` (same arguments), or pick **Learn** from `/skills`.
 
 | Command | What it explains |
 |---|---|
@@ -72,31 +84,33 @@ Sticky section bar with reading progress, light and dark themes, set in Atkinson
 ## How it works
 
 ```
-/learn  ->  Claude reads the session + git diff
+/learn  ->  the agent (Claude Code or Codex) reads the session + git diff
         ->  writes lesson.json (a fixed schema)
         ->  render.mjs injects it into template.html
         ->  .learn/2026-10-20-checkout-api.html opens in your browser
 ```
 
-Claude only writes data. The page design lives in one template, so every lesson looks the same and costs fewer tokens than generating HTML each time. Diagrams are [Mermaid](https://mermaid.js.org), rendered in the browser.
+The agent only writes data. The page design lives in one template, so every lesson looks the same and costs fewer tokens than generating HTML each time. Diagrams are [Mermaid](https://mermaid.js.org), rendered in the browser.
 
-**Privacy:** nothing about your code leaves your machine beyond what Claude Code already sends. The generated page loads Mermaid and two Google Fonts from public CDNs; everything else is inline.
+**Privacy:** nothing about your code leaves your machine beyond what your agent (Claude Code or Codex) already sends. The generated page loads Mermaid and two Google Fonts from public CDNs; everything else is inline.
 
 ## Repository layout
 
 ```
-.claude-plugin/        plugin and marketplace manifests
-commands/learn.md      the /learn slash command
+.claude-plugin/        Claude Code plugin and marketplace manifests (Codex reads the marketplace too)
+.codex-plugin/         Codex plugin manifest
+commands/learn.md      the /learn slash command (Claude Code)
 skills/learn/
   SKILL.md             analysis steps and the lesson JSON schema
   template.html        the page: design, diagrams, quiz
   render.mjs           JSON -> HTML, history index, opens the browser
   validate.mjs         nested lesson schema validation
+  agents/openai.yaml   Codex display metadata for the skill
 examples/              a sample lesson
 tests/                 renderer tests
 ```
 
-## Try the renderer without Claude
+## Try the renderer without an agent
 
 ```bash
 node skills/learn/render.mjs examples/checkout-api.json
@@ -110,7 +124,7 @@ node skills/learn/render.mjs examples/renderer-challenge.json
 
 ## Contributing
 
-Design changes go in `skills/learn/template.html`. Changes to what Claude analyzes go in `skills/learn/SKILL.md`. If you add a field to the schema, update both, plus `examples/checkout-api.json`.
+Design changes go in `skills/learn/template.html`. Changes to what the agent analyzes go in `skills/learn/SKILL.md`. If you add a field to the schema, update both, plus `examples/checkout-api.json`.
 
 ```bash
 npm install
@@ -127,7 +141,7 @@ Releases are automatic. Bump the version in one PR:
 npm run bump -- 0.2.0
 ```
 
-This sets the same version in `package.json`, `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (a test fails if they ever disagree). When the PR is merged and the tests pass on `main`, the Release workflow tags `v0.2.0` and publishes a GitHub Release with notes generated from the merged PRs. Pushes that do not change the version release nothing.
+This sets the same version in `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` and `.codex-plugin/plugin.json` (a test fails if they ever disagree). When the PR is merged and the tests pass on `main`, the Release workflow tags `v0.2.0` and publishes a GitHub Release with notes generated from the merged PRs. Pushes that do not change the version release nothing.
 
 ## License
 

@@ -1,17 +1,17 @@
 ---
 name: learn
-description: Use when the user runs /learn or asks to understand, learn from, or get a visual explanation of what they just built or changed. Analyzes the session and git diff, writes a lesson JSON, and renders it as a browser page with architecture and flow diagrams, design patterns, DB and cache notes, and a quiz.
+description: Use when the user runs /learn or $learn, or asks to understand, learn from, or get a visual explanation of what they just built or changed. Analyzes the session and git diff, writes a lesson JSON, and renders it as a browser page with architecture and flow diagrams, design patterns, DB and cache notes, and a quiz.
 ---
 
 # learn
 
 Turn the work the user just did into a short, visual lesson that opens in their browser. **Short beats complete**: the reader should finish it in about 5 minutes and remember the 3 takeaways.
 
-You write **only a JSON file**. `render.mjs` (in this skill's base directory) injects it into `template.html` and opens the page. Never hand-write HTML for the lesson.
+You write **only a JSON file**. `render.mjs` (next to this SKILL.md) injects it into `template.html` and opens the page. Never hand-write HTML for the lesson.
 
 ## Step 1: Pick the scope
 
-Read the arguments:
+Read the arguments the user typed after the command (`/learn` in Claude Code, `$learn` in Codex):
 
 | Argument | Scope |
 |---|---|
@@ -41,7 +41,7 @@ Every claim in the lesson must point at real code. If you are not sure a pattern
 
 ## Step 3: Write the lesson JSON
 
-Write it to a temp file (for example `<scratchpad>/learn.json`). Schema:
+Write it to a temp file outside the repo (your scratch or temp directory, for example `<tmp>/learn.json`). Schema:
 
 ```json
 {
@@ -154,10 +154,12 @@ Before rendering, cut: any sentence that would be true of any codebase, any repe
 ## Step 4: Render and open
 
 ```bash
-node "<skill-base-dir>/render.mjs" "<path-to-learn.json>"
+node "<directory containing this SKILL.md>/render.mjs" "<path-to-learn.json>"
 ```
 
 The script validates the JSON, writes `.learn/<date>-<slug>.html` in the current repo, updates `.learn/index.html` (lesson history), and opens the page in the default browser. Flags: `--out <dir>` to change the output folder, `--no-open` to skip opening.
+
+If your sandbox blocks opening a browser, the page is still written: give the user its path to open.
 
 If it prints a validation error, fix the JSON and run it again. If it prints a length-budget warning, trim the sections it names and run it again once.
 
