@@ -143,6 +143,9 @@ let history = [];
 try {
   history = JSON.parse(readFileSync(historyPath, "utf8"));
 } catch {}
+// history.json may come from a shared repo: keep only entries this tool could have written.
+if (!Array.isArray(history)) history = [];
+history = history.filter((h) => h && typeof h === "object" && /^[\w.-]+\.html$/.test(h.file) && typeof h.title === "string");
 history.push({ file: basename(outFile), title: data.title, date, level: data.level || "", tldr: data.tldr[0] });
 writeFileSync(historyPath, JSON.stringify(history, null, 2));
 writeIndex(outDir, history);

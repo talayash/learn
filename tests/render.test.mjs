@@ -62,6 +62,19 @@ test("rejects non-http resource links", () => {
   assert.match(res.stderr, /resources\[0\]\.url/);
 });
 
+test("tampered history entries are dropped from the index", () => {
+  const dir = mkdtempSync(join(tmpdir(), "learn-"));
+  const out = join(dir, "out");
+  execFileSync(process.execPath, ["-e", "require('fs').mkdirSync(process.argv[1])", out]);
+  writeFileSync(join(out, "history.json"), JSON.stringify([{ file: "javascript:alert(1)", title: "evil" }]));
+  const input = join(dir, "lesson.json");
+  writeFileSync(input, JSON.stringify({ title: "Real", tldr: ["t"] }));
+  execFileSync(process.execPath, [render, input, "--out", out, "--no-open"]);
+  const index = readFileSync(join(out, "index.html"), "utf8");
+  assert.ok(!index.includes("javascript:"));
+  assert.ok(index.includes("Real"));
+});
+
 test("same title on the same day does not overwrite", () => {
   const dir = mkdtempSync(join(tmpdir(), "learn-"));
   const input = join(dir, "lesson.json");
