@@ -45,6 +45,8 @@ cp -r learn/skills/learn ~/.claude/skills/learn
 | `/learn last-commit` | The last commit |
 | `/learn main..HEAD` | Any git range |
 | `/learn src/payments` | A file or folder as it is now |
+| `/learn challenge` | Hands-on exercises based on this session, with progressive hints and solutions |
+| `/learn challenge last-commit` | Exercises scoped to the last commit; also accepts a path or git range |
 | `/learn --level senior` | Same, but focused on trade-offs and failure modes. Also `junior` and `mid` (default). |
 
 Each lesson is saved to `.learn/<date>-<topic>.html` in your repo, and `.learn/index.html` lists every lesson you have generated. Add `.learn/` to `.gitignore` if you do not want to commit them.
@@ -59,6 +61,8 @@ Sections only appear when they apply. A CSS refactor will not get a database sec
 - **Patterns you used**: each pattern explained in general, then in your code, with clickable `file:line` links (they open in VS Code) and what it gains and costs
 - **Data and cache**: ER diagram, why each table exists, cache keys, TTLs and strategy
 - **Words to know**, **What a senior would ask**, **Check yourself** (quiz), **Go deeper** (curated links)
+- **Inside the code**: short, exact source excerpts with file links, line ranges, and explanations. Excerpts can also appear beside individual patterns and challenges.
+- **Put it into practice**: concrete tasks, observable checks, hints revealed one at a time, and a separate solution. Exercises are self-guided; the page does not execute code or grade your work.
 
 Light and dark themes, works on phones, prints cleanly.
 
@@ -84,6 +88,7 @@ skills/learn/
   SKILL.md             analysis steps and the lesson JSON schema
   template.html        the page: design, diagrams, quiz
   render.mjs           JSON -> HTML, history index, opens the browser
+  validate.mjs         nested lesson schema validation
 examples/              a sample lesson
 tests/                 renderer tests
 ```
@@ -94,11 +99,18 @@ tests/                 renderer tests
 node skills/learn/render.mjs examples/checkout-api.json
 ```
 
+Try the challenges and embedded source excerpts:
+
+```bash
+node skills/learn/render.mjs examples/renderer-challenge.json
+```
+
 ## Contributing
 
 Design changes go in `skills/learn/template.html`. Changes to what Claude analyzes go in `skills/learn/SKILL.md`. If you add a field to the schema, update both, plus `examples/checkout-api.json`.
 
 ```bash
+npm install
 npm test
 ```
 

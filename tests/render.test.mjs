@@ -83,3 +83,26 @@ test("same title on the same day does not overwrite", () => {
   for (let i = 0; i < 2; i++) execFileSync(process.execPath, [render, input, "--out", out, "--no-open"]);
   assert.equal(readdirSync(out).filter((f) => f.includes("-same")).length, 2);
 });
+
+test("challenge snippets preserve hostile-looking source as JSON data", () => {
+  const lesson = JSON.parse(readFileSync(join(root, "examples", "renderer-challenge.json"), "utf8"));
+  const code = '</script><img src=x onerror=alert(1)>\nconst value = "hello";';
+  lesson.snippets[0].code = code;
+  const res = run(lesson);
+  assert.equal(res.status, 0, res.stderr);
+  const file = readdirSync(res.out).find(f => f !== "index.html" && f.endsWith(".html"));
+  const html = readFileSync(join(res.out, file), "utf8");
+  assert.equal(html.match(/<\/script>/g).length, 2);
+  assert.ok(!html.includes("<img src=x"));
+  const payload = html.match(/<script id="lesson-data" type="application\/json">([\s\S]*?)<\/script>/)[1];
+  assert.equal(JSON.parse(payload).snippets[0].code, code);
+});
+
+test("malformed optional sections fail cleanly before writing output", () => {
+  for (const fields of [{ quiz: {} }, { resources: [null] }, { snippets: "bad" }, { challenges: [null] }]) {
+    const res = run({ title: "Bad", tldr: ["Text"], ...fields });
+    assert.equal(res.status, 1);
+    assert.match(res.stderr, /lesson JSON is invalid/);
+    assert.doesNotMatch(res.stderr, /TypeError/);
+  }
+});

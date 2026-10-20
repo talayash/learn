@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join, resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { validate } from "./validate.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -25,22 +26,6 @@ function fail(msg) {
   process.exit(1);
 }
 
-function validate(d) {
-  const errors = [];
-  const isStr = (v) => typeof v === "string" && v.trim().length > 0;
-  if (!d || typeof d !== "object") return ["root must be a JSON object"];
-  if (!isStr(d.title)) errors.push("title: required string");
-  if (!Array.isArray(d.tldr) || d.tldr.length === 0) errors.push("tldr: required non-empty array of strings");
-  for (const [i, q] of (d.quiz || []).entries()) {
-    if (!Array.isArray(q.options) || q.options.length < 2) errors.push(`quiz[${i}].options: need at least 2`);
-    else if (!Number.isInteger(q.answer) || q.answer < 0 || q.answer >= q.options.length)
-      errors.push(`quiz[${i}].answer: must be an index into options`);
-  }
-  for (const [i, r] of (d.resources || []).entries()) {
-    if (!/^https?:\/\//.test(r.url || "")) errors.push(`resources[${i}].url: must start with http(s)://`);
-  }
-  return errors;
-}
 
 // JSON inside <script> must not be able to close the tag or break JS parsing.
 function embed(data) {

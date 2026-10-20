@@ -1,0 +1,37 @@
+{
+  "title": "Safely embedding lesson data",
+  "level": "mid",
+  "tldr": [
+    "The renderer embeds lesson JSON in an HTML page.",
+    "Escaping special characters keeps lesson text from ending its script element."
+  ],
+  "snippets": [
+    {
+      "path": "skills/learn/render.mjs",
+      "startLine": 31,
+      "language": "javascript",
+      "code": "function embed(data) {\n  return JSON.stringify(data)\n    .replace(/</g, \"\\\\u003c\")\n    .replace(/>/g, \"\\\\u003e\")\n    .replace(/&/g, \"\\\\u0026\")\n    .replace(new RegExp(String.fromCharCode(0x2028), \"g\"), \"\\\\u2028\")\n    .replace(new RegExp(String.fromCharCode(0x2029), \"g\"), \"\\\\u2029\");\n}",
+      "explanation": "JSON serialization alone does not protect an HTML script boundary. Escaping angle brackets keeps user-provided text inside the JSON payload."
+    }
+  ],
+  "challenges": [
+    {
+      "title": "Prove a snippet cannot inject HTML",
+      "task": "Add a renderer test with a code snippet containing a closing script tag followed by an HTML element. Verify that the payload survives as text without creating an extra element.",
+      "where": [
+        "skills/learn/render.mjs:31",
+        "tests/render.test.mjs:1"
+      ],
+      "hints": [
+        "Look at the existing test for a title containing a closing script tag.",
+        "Read the generated lesson-data element and parse its JSON. Compare the recovered snippet with the original."
+      ],
+      "checks": [
+        "The recovered code exactly matches the input.",
+        "The payload does not create another script or HTML element.",
+        "The existing renderer tests still pass."
+      ],
+      "solution": "Render a lesson whose snippets[0].code contains </script><img src=x onerror=alert(1)>. Parse the generated HTML, assert that only the two template script elements exist and no img element was created, then parse lesson-data and compare the code with the original string. The embed function escapes the HTML delimiters while JSON.parse restores the original text."
+    }
+  ]
+}

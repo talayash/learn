@@ -168,6 +168,14 @@ details.q p { margin: .6rem 0 0; }
 .quiz-item button.opt.wrong { border-color: var(--bad); box-shadow: inset 4px 0 0 var(--bad); }
 .quiz-item .why { margin-top: .6rem; font-size: .95rem; }
 .score { color: var(--muted); font-size: .95rem; }
+.snippet { margin: 1rem 0; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); overflow: hidden; }
+.snippet figcaption { padding: .65rem .9rem; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
+.snippet pre { margin: 0; padding: 1rem; overflow-x: auto; tab-size: 2; line-height: 1.6; }
+.snippet .explanation { padding: .75rem .9rem; margin: 0; border-top: 1px solid var(--rule); }
+.challenge { border-top: 1px solid var(--rule); padding: 1rem 0; }
+.challenge h3 { margin-top: .5rem; }
+.hint-button { font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: .4rem .8rem; cursor: pointer; margin-bottom: 1rem; }
+.hint-button:disabled { color: var(--muted); cursor: default; }
 
 ul.resources { list-style: none; padding: 0; margin: 0; }
 ul.resources li { padding: .6rem 0; border-top: 1px solid var(--rule); }
@@ -275,6 +283,15 @@ function editorLink(ref) {
   return h("a", { href, title: "Open in VS Code" }, ref);
 }
 
+function codeSnippet(s) {
+  const end = s.startLine + s.code.replace(/\r?\n$/, "").split("\n").length - 1;
+  return h("figure", { class: "snippet" },
+    h("figcaption", null, editorLink(`${s.path}:${s.startLine}`),
+      h("span", { class: "mono" }, ` · lines ${s.startLine}–${end}${s.language ? " · " + s.language : ""}`)),
+    h("pre", { dir: "ltr" }, h("code", null, s.code)),
+    text("p", s.explanation, { class: "explanation" }));
+}
+
 /* Hero */
 const metaBits = [];
 if (L.level) metaBits.push(h("span", null, "Level ", h("b", null, L.level)));
@@ -301,6 +318,10 @@ if (L.pitch || has(L.files)) {
 }
 
 /* Architecture */
+if (has(L.snippets)) {
+  section("code", "Inside the code", h("div", null, L.snippets.map(codeSnippet)));
+}
+
 if (L.architecture?.mermaid) {
   section("architecture", "Architecture", h("div", null,
     h("p", { class: "lead" }, "The moving parts and how they talk to each other."),
@@ -324,6 +345,7 @@ if (has(L.patterns)) {
     p.what ? h("p", { dir: "auto" }, h("span", { class: "label" }, "The idea. "), p.what) : null,
     p.here ? h("p", { dir: "auto" }, h("span", { class: "label" }, "In your code. "), p.here) : null,
     has(p.where) ? h("div", { class: "where" }, p.where.map(editorLink)) : null,
+    has(p.snippets) ? p.snippets.map(codeSnippet) : null,
     p.tradeoffs && (has(p.tradeoffs.pros) || has(p.tradeoffs.cons)) ? h("div", { class: "tradeoffs" },
       has(p.tradeoffs.pros) ? h("div", { class: "gain" }, h("h4", null, "What you gain"), h("ul", null, p.tradeoffs.pros.map((x) => text("li", x)))) : null,
       has(p.tradeoffs.cons) ? h("div", { class: "cost" }, h("h4", null, "What it costs"), h("ul", null, p.tradeoffs.cons.map((x) => text("li", x)))) : null) : null))));
@@ -379,6 +401,32 @@ if (has(L.quiz)) {
     return h("div", { class: "quiz-item" }, text("div", `${qi + 1}. ${q.q}`, { class: "qtext" }), h("div", { class: "opts" }, buttons), why);
   });
   section("quiz", "Check yourself", h("div", null, items, score));
+}
+
+/* Practical challenges: reveal one hint at a time, with a separate solution. */
+if (has(L.challenges)) {
+  section("challenges", "Put it into practice", h("div", null,
+    h("p", { class: "lead" }, "Try each task in your project. Use the hints when you get stuck, then compare your approach with the solution."),
+    L.challenges.map((c, i) => {
+      let revealed = 0;
+      const hints = h("ol", { id: `challenge-hints-${i}`, class: "steps", "aria-live": "polite" });
+      const next = h("button", {
+        type: "button", class: "hint-button", "aria-controls": hints.id,
+        onclick: () => {
+          hints.append(text("li", c.hints[revealed++]));
+          next.textContent = revealed === c.hints.length ? "All hints revealed" : `Show hint ${revealed + 1} of ${c.hints.length}`;
+          next.disabled = revealed === c.hints.length;
+        },
+      }, `Show hint 1 of ${c.hints.length}`);
+      return h("article", { class: "challenge" },
+        text("h3", `${i + 1}. ${c.title}`), text("p", c.task),
+        has(c.where) ? h("div", { class: "where" }, c.where.map(editorLink)) : null,
+        has(c.snippets) ? c.snippets.map(codeSnippet) : null,
+        h("h4", null, "How to check your work"),
+        h("ul", { class: "notes" }, c.checks.map((check) => text("li", check))),
+        hints, next,
+        h("details", { class: "q" }, h("summary", null, "Reveal solution"), text("p", c.solution)));
+    })));
 }
 
 /* Resources */
