@@ -80,3 +80,33 @@ export function validate(data) {
   });
   return errors;
 }
+
+// Soft length budget: lessons should read in about five minutes. Over-budget sections are
+// warnings, not errors, so an old or unusual lesson still renders.
+const limits = {
+  tldr: 3, snippets: 2, files: 6, flows: 2, patterns: 3, concepts: 5,
+  quiz: 3, seniorQuestions: 3, challenges: 3, resources: 3,
+};
+const skipped = new Set(["code", "mermaid", "erMermaid", "url", "path", "root", "generatedAt"]);
+export function countWords(value, key) {
+  if (skipped.has(key)) return 0;
+  if (typeof value === "string") return value.split(/\s+/).filter(Boolean).length;
+  if (Array.isArray(value)) return value.reduce((n, x) => n + countWords(x), 0);
+  if (value && typeof value === "object") return Object.entries(value).reduce((n, [k, x]) => n + countWords(x, k), 0);
+  return 0;
+}
+export function budget(data) {
+  const warnings = [];
+  for (const [key, max] of Object.entries(limits))
+    if (Array.isArray(data[key]) && data[key].length > max) warnings.push(`${key}: ${data[key].length} entries, budget is ${max}`);
+  data.tldr.forEach((t, i) => {
+    if (countWords(t) > 25) warnings.push(`tldr[${i}]: ${countWords(t)} words, budget is 25`);
+  });
+  data.flows?.forEach((f, i) => {
+    if (f.steps?.length > 6) warnings.push(`flows[${i}].steps: ${f.steps.length} entries, budget is 6`);
+  });
+  if (data.architecture?.notes?.length > 3) warnings.push(`architecture.notes: ${data.architecture.notes.length} entries, budget is 3`);
+  const words = countWords(data);
+  if (words > 1100) warnings.push(`whole lesson: ${words} words of prose, budget is 1100 (about 5 minutes)`);
+  return warnings;
+}
