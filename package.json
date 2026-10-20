@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "example": "node skills/learn/render.mjs examples/checkout-api.json"
+    "example": "node skills/learn/render.mjs examples/checkout-api.json",
+    "bump": "node scripts/bump-version.mjs"
   },
   "engines": {
     "node": ">=18"

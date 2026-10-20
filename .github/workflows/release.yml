@@ -1,0 +1,38 @@
+name: Release
+
+# Runs after Test passes on main. Publishes a release when plugin.json has a
+# version that has not been tagged yet; otherwise does nothing.
+on:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency: release
+
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - name: Read version
+        id: version
+        run: echo "tag=v$(node -p "require('./.claude-plugin/plugin.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Publish release if the version is new
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG is already released, nothing to do"
+            exit 0
+          fi
+          gh release create "$TAG" --target "$SHA" --title "$TAG" --generate-notes
