@@ -1,6 +1,6 @@
 {
   "name": "learn",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Claude Code plugin: turn what you just built into a visual lesson.",
   "type": "module",

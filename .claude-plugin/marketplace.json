@@ -9,7 +9,7 @@
       "name": "learn",
       "source": "./",
       "description": "Explain what you just built: architecture, flows, patterns, DB and cache, with diagrams and a quiz.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": { "name": "Tal Ayash" },
       "homepage": "https://github.com/talayash/learn",
       "license": "MIT",
