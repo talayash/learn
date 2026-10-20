@@ -6,46 +6,50 @@
 <title>Lesson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,800;1,7..72,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,800;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
-  --paper: #F4F6F1;
-  --sheet: #FBFCF9;
-  --ink: #1D2530;
-  --muted: #5D6672;
-  --rule: #D8DDD3;
+  --paper: #F6F6F3;
+  --sheet: #FFFFFF;
+  --ink: #171B21;
+  --muted: #5E6570;
+  --rule: #E3E4DF;
   --mark: #F5DC4E;
-  --mark-ink: #1D2530;
+  --mark-ink: #171B21;
   --line: #2F6F73;
+  --tint: #E6F0F0;
   --good: #2E7D4F;
   --bad: #B23A3A;
-  --measure: 42rem;
-  --wide: 60rem;
+  --measure: 44rem;
+  --wide: 62rem;
+  --radius: 10px;
+  --sans: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Code", monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #14181D; --sheet: #1A1F25; --ink: #E5E8EC; --muted: #97A0AB; --rule: #2A3038;
-    --mark: #8A7714; --mark-ink: #FFF8D6; --line: #6FB7BA; --good: #6CC58F; --bad: #EE8A8A;
+    --paper: #121519; --sheet: #1A1E24; --ink: #E7E9EC; --muted: #99A1AB; --rule: #2A3038;
+    --mark: #8A7714; --mark-ink: #FFF8D6; --line: #6FB7BA; --tint: #1C2B2D; --good: #6CC58F; --bad: #EE8A8A;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #14181D; --sheet: #1A1F25; --ink: #E5E8EC; --muted: #97A0AB; --rule: #2A3038;
-  --mark: #8A7714; --mark-ink: #FFF8D6; --line: #6FB7BA; --good: #6CC58F; --bad: #EE8A8A;
+  --paper: #121519; --sheet: #1A1E24; --ink: #E7E9EC; --muted: #99A1AB; --rule: #2A3038;
+  --mark: #8A7714; --mark-ink: #FFF8D6; --line: #6FB7BA; --tint: #1C2B2D; --good: #6CC58F; --bad: #EE8A8A;
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font: 400 1.0625rem/1.7 "Literata", Georgia, serif;
+  font: 400 1.0625rem/1.65 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
-code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .82em; }
+code, .mono { font-family: var(--mono); font-size: .85em; }
 a { color: inherit; }
-:focus-visible { outline: 3px solid var(--line); outline-offset: 2px; border-radius: 2px; }
+:focus-visible { outline: 3px solid var(--line); outline-offset: 2px; border-radius: 4px; }
 
 /* The highlighter: the one loud thing on the page. */
 mark, .hl {
@@ -58,159 +62,194 @@ mark, .hl {
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) mark, :root:not([data-theme="light"]) .hl { color: var(--mark-ink); } }
 :root[data-theme="dark"] mark, :root[data-theme="dark"] .hl { color: var(--mark-ink); }
 
-.layout {
-  display: grid;
-  grid-template-columns: 13rem minmax(0, 1fr);
-  gap: 3.5rem;
-  max-width: calc(var(--wide) + 16.5rem);
-  margin: 0 auto;
-  padding: 3rem 1.5rem 6rem;
+/* Top bar: section pills and reading progress */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--rule);
 }
-nav.toc { position: sticky; top: 2rem; align-self: start; font-size: .9rem; }
-nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: ch; }
-nav.toc li { counter-increment: ch; }
+.topbar-inner {
+  display: flex; align-items: center; gap: 1rem;
+  max-width: var(--wide); margin: 0 auto; padding: .55rem 1rem;
+}
+.topbar .home { color: var(--muted); text-decoration: none; font-size: .9rem; white-space: nowrap; }
+.topbar .home:hover { color: var(--ink); }
+nav.toc {
+  flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none;
+  /* Fade the edges so pills cut off by the scroll read as "more this way" */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 1rem, #000 calc(100% - 1rem), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 1rem, #000 calc(100% - 1rem), transparent);
+}
+nav.toc::-webkit-scrollbar { display: none; }
+nav.toc ol { display: flex; gap: .35rem; list-style: none; margin: 0; padding: 0 1rem; }
 nav.toc ol a {
-  display: grid; grid-template-columns: 1.6rem 1fr; padding: .3rem 0;
-  color: var(--muted); text-decoration: none;
+  display: block; white-space: nowrap; padding: .3rem .75rem; border-radius: 999px;
+  color: var(--muted); text-decoration: none; font-size: .88rem;
 }
-nav.toc ol a::before { content: counter(ch); font-family: "JetBrains Mono", monospace; font-size: .8em; padding-top: .15em; }
-nav.toc a:hover, nav.toc a.active { color: var(--ink); }
-nav.toc a.active span { background: linear-gradient(var(--mark), var(--mark)) 0 85% / 100% .35em no-repeat; }
-nav.toc .home { display: block; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--muted); }
-#theme { margin-top: .75rem; background: none; border: 1px solid var(--rule); color: var(--muted); font: inherit; font-size: .85rem; padding: .25rem .6rem; border-radius: 4px; cursor: pointer; }
+nav.toc ol a:hover { color: var(--ink); background: var(--sheet); }
+nav.toc ol a.active { color: var(--ink); background: var(--mark); }
+:root[data-theme="dark"] nav.toc ol a.active { color: var(--mark-ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) nav.toc ol a.active { color: var(--mark-ink); } }
+#theme {
+  background: none; border: 1px solid var(--rule); color: var(--muted); font: inherit; font-size: .85rem;
+  padding: .25rem .65rem; border-radius: 999px; cursor: pointer; white-space: nowrap;
+}
+.progress { height: 3px; }
+.progress span { display: block; height: 100%; width: 0; background: var(--line); }
 
-main { min-width: 0; }
-main > section, main > header { max-width: var(--measure); }
-main > section.wide { max-width: var(--wide); }
+main { max-width: var(--measure); margin: 0 auto; padding: 2.5rem 1rem 5rem; }
+main > section.wide { max-width: var(--wide); width: min(var(--wide), calc(100vw - 2rem)); margin-left: 50%; transform: translateX(-50%); }
 
-header.hero { padding-bottom: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--rule); }
+/* Hero */
+header.hero { padding-bottom: 1.5rem; }
+.kicker { color: var(--muted); font-size: .9rem; margin: 0 0 .6rem; letter-spacing: .02em; }
+.kicker b { color: var(--ink); font-weight: 600; }
 .hero h1 {
-  font-weight: 800; font-size: clamp(2.3rem, 5.5vw, 3.8rem); line-height: 1.04;
-  letter-spacing: -.02em; margin: 0 0 1.75rem; text-wrap: balance;
+  font-weight: 800; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.08;
+  letter-spacing: -.02em; margin: 0 0 1.5rem; text-wrap: balance;
 }
-.tldr { font-size: 1.28rem; line-height: 1.55; margin: 0; padding: 0; list-style: none; }
-.tldr li + li { margin-top: .5rem; }
-.tldr li:first-child { font-weight: 600; }
-.meta { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; margin-top: 1.75rem; color: var(--muted); font-size: .92rem; }
-.meta b { color: var(--ink); font-weight: 600; }
+ol.takeaways { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; counter-reset: tk; }
+ol.takeaways li {
+  counter-increment: tk; display: grid; grid-template-columns: 2rem 1fr; gap: .6rem; align-items: start;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: .8rem 1rem; font-size: 1.08rem; line-height: 1.5;
+}
+ol.takeaways li::before {
+  content: counter(tk); display: grid; place-items: center; width: 1.75rem; height: 1.75rem;
+  border-radius: 50%; background: var(--tint); color: var(--line); font-weight: 800; font-size: .9rem;
+}
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+.chips span { font-size: .82rem; padding: .2rem .65rem; border-radius: 999px; background: var(--tint); color: var(--ink); }
 
-section { padding: 2.75rem 0 1rem; }
-h2 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 1.1rem; font-weight: 800; letter-spacing: -.01em; }
-h3 { font-size: 1.2rem; margin: 2rem 0 .5rem; line-height: 1.3; }
+.callout {
+  margin: 1.25rem 0 0; padding: 1rem 1.2rem; background: var(--sheet);
+  border: 1px solid var(--rule); border-left: 4px solid var(--mark); border-radius: var(--radius);
+}
+.callout .label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .3rem; }
+.callout p { margin: 0; font-size: 1.05rem; }
+
+/* Sections */
+section { padding: 2.25rem 0 .5rem; border-top: 1px solid var(--rule); margin-top: 1.5rem; }
+.eyebrow { font-family: var(--mono); font-size: .78rem; color: var(--line); margin: 0 0 .25rem; }
+h2 { font-size: 1.55rem; line-height: 1.2; margin: 0 0 1rem; font-weight: 800; letter-spacing: -.01em; }
+h3 { font-size: 1.12rem; margin: 1.5rem 0 .5rem; line-height: 1.3; }
+h4 { margin: 1rem 0 .3rem; font-size: .95rem; }
 p { margin: 0 0 1rem; }
 .lead { color: var(--muted); margin-top: -.4rem; }
 
-blockquote.pitch {
-  margin: 0; padding: 1.25rem 1.5rem; background: var(--sheet);
-  border-left: 4px solid var(--mark); font-style: italic; font-size: 1.12rem;
-}
+details.more { margin-top: 1rem; }
+details.more > summary { cursor: pointer; color: var(--muted); font-size: .92rem; }
+details.more > summary:hover { color: var(--ink); }
+details.more[open] > summary { margin-bottom: .5rem; }
 
 .files { list-style: none; padding: 0; margin: 0; }
-.files li { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: .4rem; padding: .45rem 0; border-top: 1px solid var(--rule); }
-.files .sign { font-family: "JetBrains Mono", monospace; font-weight: 600; text-align: center; }
+.files li { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: .4rem; padding: .4rem 0; border-top: 1px solid var(--rule); font-size: .95rem; }
+.files .sign { font-family: var(--mono); font-weight: 600; text-align: center; }
 .files .added { color: var(--good); } .files .deleted { color: var(--bad); } .files .modified { color: var(--muted); }
 .files .path { word-break: break-all; }
-.files .role { display: block; color: var(--muted); font-size: .92rem; }
+.files .role { display: block; color: var(--muted); font-size: .9rem; }
 
 figure.diagram {
-  margin: 0 0 1.25rem; padding: 1.5rem; background: var(--sheet);
-  border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto;
+  margin: 0 0 1rem; padding: 1.25rem; background: var(--sheet);
+  border: 1px solid var(--rule); border-radius: var(--radius); overflow-x: auto;
 }
 figure.diagram .mm { display: flex; justify-content: center; min-height: 3rem; }
 figure.diagram svg { max-width: 100%; height: auto; }
-figure.diagram figcaption { margin-top: 1rem; font-size: .9rem; color: var(--muted); }
 .mm-error { font-size: .85rem; color: var(--bad); }
 .mm-error pre { color: var(--ink); white-space: pre-wrap; background: var(--paper); padding: .75rem; border-radius: 4px; }
 
 ol.steps { padding-left: 1.4rem; margin: 0 0 1rem; }
-ol.steps li { padding-left: .3rem; margin-bottom: .35rem; }
-ul.notes { padding-left: 1.2rem; }
+ol.steps li { padding-left: .3rem; margin-bottom: .3rem; }
+ul.notes { padding-left: 1.2rem; margin: 0 0 1rem; }
+ul.notes li { margin-bottom: .25rem; }
 
-.pattern { padding: 1.5rem 0; border-top: 1px solid var(--rule); }
-.pattern:first-of-type { border-top: 0; padding-top: .25rem; }
-.pattern h3 { margin: 0 0 .1rem; font-size: 1.35rem; }
-.pattern .cat { color: var(--muted); font-size: .9rem; margin-bottom: .9rem; }
+/* Card grids: patterns and terms */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: .9rem; }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1.1rem 1.2rem; min-width: 0; }
+.pattern h3 { margin: 0 0 .1rem; font-size: 1.2rem; }
+.pattern .cat { color: var(--muted); font-size: .85rem; margin-bottom: .7rem; }
+.pattern p { font-size: .98rem; margin-bottom: .6rem; }
 .pattern .label { font-weight: 600; }
-.where { display: flex; flex-wrap: wrap; gap: .4rem; margin: .25rem 0 1rem; }
+.where { display: flex; flex-wrap: wrap; gap: .4rem; margin: .25rem 0 .75rem; }
 .where a, .where span {
-  font-family: "JetBrains Mono", monospace; font-size: .78rem; padding: .2rem .5rem;
-  border: 1px solid var(--rule); border-radius: 4px; background: var(--sheet); text-decoration: none; word-break: break-all;
+  font-family: var(--mono); font-size: .76rem; padding: .15rem .5rem;
+  border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); text-decoration: none; word-break: break-all;
 }
 .where a:hover { border-color: var(--line); }
-.tradeoffs { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; font-size: .95rem; }
-.tradeoffs h4 { margin: 0 0 .3rem; font-size: .95rem; }
+.tradeoffs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: .92rem; }
+.tradeoffs h4 { margin: 0 0 .2rem; font-size: .9rem; }
 .tradeoffs ul { margin: 0; padding-left: 1.1rem; }
 .tradeoffs .gain h4 { color: var(--good); } .tradeoffs .cost h4 { color: var(--bad); }
+.term dt { font-weight: 800; margin-bottom: .25rem; }
+.term dd { margin: 0; font-size: .97rem; }
 
 table { width: 100%; border-collapse: collapse; font-size: .95rem; margin-bottom: 1rem; }
-th, td { text-align: left; padding: .55rem .6rem .55rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-th { font-weight: 600; color: var(--muted); font-size: .88rem; }
+th, td { text-align: left; padding: .5rem .6rem .5rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: .85rem; }
 .table-wrap { overflow-x: auto; }
 
-dl.concepts { margin: 0; }
-dl.concepts dt { font-weight: 700; margin-top: 1.1rem; }
-dl.concepts dd { margin: .15rem 0 0; }
-
-details.q { border-top: 1px solid var(--rule); padding: .8rem 0; }
-details.q summary { cursor: pointer; font-weight: 600; list-style-position: outside; }
+details.q { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--sheet); padding: .75rem 1rem; margin-bottom: .6rem; }
+details.q summary { cursor: pointer; font-weight: 600; }
 details.q p { margin: .6rem 0 0; }
 
-.quiz-item { margin-bottom: 2rem; }
-.quiz-item .qtext { font-weight: 600; margin-bottom: .6rem; }
-.quiz-item .opts { display: grid; gap: .45rem; }
+.quiz-item { margin-bottom: 1.5rem; }
+.quiz-item .qtext { font-weight: 600; margin-bottom: .55rem; }
+.quiz-item .opts { display: grid; gap: .4rem; }
 .quiz-item button.opt {
   text-align: left; font: inherit; font-size: .98rem; color: var(--ink); background: var(--sheet);
-  border: 1px solid var(--rule); border-radius: 6px; padding: .65rem .9rem; cursor: pointer;
+  border: 1px solid var(--rule); border-radius: var(--radius); padding: .6rem .9rem; cursor: pointer;
 }
 .quiz-item button.opt:hover:not(:disabled) { border-color: var(--line); }
 .quiz-item button.opt:disabled { cursor: default; }
 .quiz-item button.opt.right { border-color: var(--good); box-shadow: inset 4px 0 0 var(--good); }
 .quiz-item button.opt.wrong { border-color: var(--bad); box-shadow: inset 4px 0 0 var(--bad); }
-.quiz-item .why { margin-top: .6rem; font-size: .95rem; }
+.quiz-item .why { margin-top: .5rem; font-size: .95rem; }
 .score { color: var(--muted); font-size: .95rem; }
-.snippet { margin: 1rem 0; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); overflow: hidden; }
-.snippet figcaption { padding: .65rem .9rem; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
-.snippet pre { margin: 0; padding: 1rem; overflow-x: auto; tab-size: 2; line-height: 1.6; }
-.snippet .explanation { padding: .75rem .9rem; margin: 0; border-top: 1px solid var(--rule); }
-.challenge { border-top: 1px solid var(--rule); padding: 1rem 0; }
-.challenge h3 { margin-top: .5rem; }
-.hint-button { font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: .4rem .8rem; cursor: pointer; margin-bottom: 1rem; }
+
+.snippet { margin: 0 0 1rem; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--sheet); overflow: hidden; }
+.snippet figcaption { padding: .55rem .9rem; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; font-size: .9rem; }
+.snippet pre { margin: 0; padding: .9rem 1rem; overflow-x: auto; tab-size: 2; line-height: 1.55; background: var(--paper); }
+.snippet .explanation { padding: .7rem .9rem; margin: 0; border-top: 1px solid var(--rule); font-size: .97rem; }
+
+.challenge { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1.1rem 1.2rem; margin-bottom: 1rem; }
+.challenge h3 { margin-top: 0; }
+.challenge details.q { background: var(--paper); }
+.hint-button { font: inherit; font-size: .92rem; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 999px; padding: .35rem .9rem; cursor: pointer; margin-bottom: .9rem; }
 .hint-button:disabled { color: var(--muted); cursor: default; }
 
 ul.resources { list-style: none; padding: 0; margin: 0; }
-ul.resources li { padding: .6rem 0; border-top: 1px solid var(--rule); }
+ul.resources li { padding: .55rem 0; border-top: 1px solid var(--rule); }
 ul.resources a { font-weight: 600; }
-ul.resources .kind { color: var(--muted); font-size: .88rem; margin-left: .5rem; }
+ul.resources .kind { color: var(--muted); font-size: .85rem; margin-left: .5rem; }
 
-footer { margin-top: 4rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: .88rem; max-width: var(--measure); }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: .85rem; }
 
-@media (max-width: 860px) {
-  .layout { grid-template-columns: 1fr; gap: 0; padding: 1.5rem 1rem 4rem; }
-  nav.toc { position: static; margin-bottom: 2rem; }
-  nav.toc ol { display: flex; flex-wrap: wrap; gap: .1rem 1rem; }
-  nav.toc ol a { display: inline-flex; gap: .35rem; }
-  nav.toc .home { display: inline-block; margin-right: 1rem; }
-  .tradeoffs { grid-template-columns: 1fr; gap: .75rem; }
+@media (max-width: 640px) {
+  .topbar .home { display: none; }
+  .tradeoffs { grid-template-columns: 1fr; gap: .6rem; }
   figure.diagram { padding: 1rem .75rem; }
   /* Keep diagrams legible on phones: natural size, scroll sideways inside the frame */
   figure.diagram .mm { justify-content: flex-start; }
-  figure.diagram svg { max-width: none !important; min-width: 36rem; }
+  figure.diagram svg { max-width: none !important; min-width: 34rem; }
 }
 @media print {
-  nav.toc { display: none; } .layout { display: block; }
-  figure.diagram, .pattern { break-inside: avoid; }
+  .topbar { display: none; }
+  details.more, details.q { display: block; }
+  figure.diagram, .card, .challenge { break-inside: avoid; }
 }
 </style>
 </head>
 <body>
-<div class="layout">
-  <nav class="toc" aria-label="Lesson sections">
-    <ol id="toc"></ol>
-    <a class="home" href="index.html">All lessons</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="home" href="index.html">&larr; All lessons</a>
+    <nav class="toc" aria-label="Lesson sections"><ol id="toc"></ol></nav>
     <button id="theme" type="button">Theme: auto</button>
-  </nav>
-  <main id="app"></main>
-</div>
+  </div>
+  <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+</header>
+<main id="app"></main>
 
 <script id="lesson-data" type="application/json">/*__LEARN_DATA__*/null</script>
 <script type="module">
@@ -235,6 +274,7 @@ function h(tag, attrs, ...kids) {
 }
 const has = (a) => Array.isArray(a) && a.length > 0;
 const text = (tag, s, attrs) => h(tag, { dir: "auto", ...(attrs || {}) }, s);
+const more = (label, ...kids) => h("details", { class: "more" }, h("summary", null, label), kids);
 
 // Theme toggle: auto -> light -> dark. Stored per viewer, page works without it.
 const themeBtn = document.getElementById("theme");
@@ -261,18 +301,29 @@ if (!L) {
 }
 
 document.title = L.title;
+
+// Reading time counts prose only: code and diagram source are skimmed, not read.
+function words(v, key) {
+  if (["code", "mermaid", "erMermaid", "url", "path", "root", "generatedAt"].includes(key)) return 0;
+  if (typeof v === "string") return v.split(/\s+/).filter(Boolean).length;
+  if (Array.isArray(v)) return v.reduce((n, x) => n + words(x), 0);
+  if (v && typeof v === "object") return Object.entries(v).reduce((n, [k, x]) => n + words(x, k), 0);
+  return 0;
+}
+const minutes = Math.max(1, Math.round(words(L) / 220));
+
 const sections = [];
 function section(id, title, body, opts = {}) {
   if (!body) return;
   sections.push({ id, title });
-  app.append(h("section", { id, class: opts.wide ? "wide" : null }, h("h2", null, title), body));
+  const n = String(sections.length).padStart(2, "0");
+  app.append(h("section", { id, class: opts.wide ? "wide" : null },
+    h("p", { class: "eyebrow", "aria-hidden": "true" }, n), h("h2", null, title), body));
 }
 
-function diagram(src, caption) {
+function diagram(src) {
   if (!src) return null;
-  return h("figure", { class: "diagram" },
-    h("div", { class: "mm", "data-src": src }),
-    caption ? text("figcaption", caption) : null);
+  return h("figure", { class: "diagram" }, h("div", { class: "mm", "data-src": src }));
 }
 
 function editorLink(ref) {
@@ -292,39 +343,30 @@ function codeSnippet(s) {
     text("p", s.explanation, { class: "explanation" }));
 }
 
-/* Hero */
-const metaBits = [];
-if (L.level) metaBits.push(h("span", null, "Level ", h("b", null, L.level)));
-if (has(L.files)) metaBits.push(h("span", null, h("b", null, L.files.length), " files"));
-if (has(L.patterns)) metaBits.push(h("span", null, h("b", null, L.patterns.length), " patterns"));
-if (has(L.stack)) metaBits.push(h("span", null, "Built with ", h("b", null, L.stack.join(", "))));
-app.append(h("header", { class: "hero", id: "top" },
-  text("h1", L.title),
-  h("ul", { class: "tldr" }, L.tldr.map((t) => text("li", t))),
-  metaBits.length ? h("div", { class: "meta" }, metaBits) : null));
-
-/* What you built */
-if (L.pitch || has(L.files)) {
-  section("built", "What you built", h("div", null,
-    L.pitch ? h("div", null, h("p", { class: "lead" }, "Say it like this in a standup or interview:"),
-      text("blockquote", L.pitch, { class: "pitch" })) : null,
-    has(L.files) ? h("div", null, h("h3", null, "Files that carry the change"),
-      h("ul", { class: "files" }, L.files.map((f) => {
-        const c = ["added", "deleted"].includes(f.change) ? f.change : "modified";
-        return h("li", null,
-          h("span", { class: "sign " + c, "aria-label": c }, c === "added" ? "+" : c === "deleted" ? "x" : "~"),
-          h("div", null, h("span", { class: "path mono" }, f.path), f.role ? text("span", f.role, { class: "role" }) : null));
-      }))) : null));
+function fileList(files) {
+  return h("ul", { class: "files" }, files.map((f) => {
+    const c = ["added", "deleted"].includes(f.change) ? f.change : "modified";
+    return h("li", null,
+      h("span", { class: "sign " + c, "aria-label": c }, c === "added" ? "+" : c === "deleted" ? "x" : "~"),
+      h("div", null, h("span", { class: "path mono" }, f.path), f.role ? text("span", f.role, { class: "role" }) : null));
+  }));
 }
+
+/* Hero: kicker, title, numbered takeaways, 30-second pitch, collapsed file list */
+const kicker = [h("span", null, "Lesson")];
+if (L.level) kicker.push(" · ", h("span", null, "Level ", h("b", null, L.level)));
+kicker.push(" · ", h("span", null, h("b", null, minutes), " min read"));
+app.append(h("header", { class: "hero", id: "top" },
+  h("p", { class: "kicker" }, kicker),
+  text("h1", L.title),
+  h("ol", { class: "takeaways" }, L.tldr.map((t) => text("li", t))),
+  has(L.stack) ? h("div", { class: "chips" }, L.stack.map((s) => text("span", s))) : null,
+  L.pitch ? h("div", { class: "callout" }, h("span", { class: "label" }, "Say it in 30 seconds"), text("p", L.pitch)) : null,
+  has(L.files) ? more(`${L.files.length} file${L.files.length === 1 ? "" : "s"} that carry the change`, fileList(L.files)) : null));
 
 /* Architecture */
-if (has(L.snippets)) {
-  section("code", "Inside the code", h("div", null, L.snippets.map(codeSnippet)));
-}
-
 if (L.architecture?.mermaid) {
-  section("architecture", "Architecture", h("div", null,
-    h("p", { class: "lead" }, "The moving parts and how they talk to each other."),
+  section("architecture", "How it fits together", h("div", null,
     diagram(L.architecture.mermaid),
     has(L.architecture.notes) ? h("ul", { class: "notes" }, L.architecture.notes.map((n) => text("li", n))) : null), { wide: true });
 }
@@ -337,18 +379,23 @@ if (has(L.flows)) {
     has(f.steps) ? h("ol", { class: "steps" }, f.steps.map((s) => text("li", s))) : null))), { wide: true });
 }
 
+/* Code excerpts */
+if (has(L.snippets)) {
+  section("code", "Key code", h("div", null, L.snippets.map(codeSnippet)));
+}
+
 /* Patterns */
 if (has(L.patterns)) {
-  section("patterns", "Patterns you used", h("div", null, L.patterns.map((p) => h("article", { class: "pattern" },
+  section("patterns", "Patterns", h("div", { class: "grid" }, L.patterns.map((p) => h("article", { class: "card pattern" },
     h("h3", { dir: "auto" }, h("mark", null, p.name)),
     p.category ? text("div", p.category, { class: "cat" }) : null,
-    p.what ? h("p", { dir: "auto" }, h("span", { class: "label" }, "The idea. "), p.what) : null,
-    p.here ? h("p", { dir: "auto" }, h("span", { class: "label" }, "In your code. "), p.here) : null,
+    p.what ? h("p", { dir: "auto" }, h("span", { class: "label" }, "Idea: "), p.what) : null,
+    p.here ? h("p", { dir: "auto" }, h("span", { class: "label" }, "Here: "), p.here) : null,
     has(p.where) ? h("div", { class: "where" }, p.where.map(editorLink)) : null,
     has(p.snippets) ? p.snippets.map(codeSnippet) : null,
-    p.tradeoffs && (has(p.tradeoffs.pros) || has(p.tradeoffs.cons)) ? h("div", { class: "tradeoffs" },
-      has(p.tradeoffs.pros) ? h("div", { class: "gain" }, h("h4", null, "What you gain"), h("ul", null, p.tradeoffs.pros.map((x) => text("li", x)))) : null,
-      has(p.tradeoffs.cons) ? h("div", { class: "cost" }, h("h4", null, "What it costs"), h("ul", null, p.tradeoffs.cons.map((x) => text("li", x)))) : null) : null))));
+    p.tradeoffs && (has(p.tradeoffs.pros) || has(p.tradeoffs.cons)) ? more("Trade-offs", h("div", { class: "tradeoffs" },
+      has(p.tradeoffs.pros) ? h("div", { class: "gain" }, h("h4", null, "Gain"), h("ul", null, p.tradeoffs.pros.map((x) => text("li", x)))) : null,
+      has(p.tradeoffs.cons) ? h("div", { class: "cost" }, h("h4", null, "Cost"), h("ul", null, p.tradeoffs.cons.map((x) => text("li", x)))) : null)) : null))), { wide: true });
 }
 
 /* Data and cache */
@@ -367,15 +414,8 @@ if (D && (D.erMermaid || has(D.tables) || has(D.cache))) {
 
 /* Concepts */
 if (has(L.concepts)) {
-  section("concepts", "Words to know", h("dl", { class: "concepts" }, L.concepts.map((c) => [
-    h("dt", { dir: "auto" }, h("mark", null, c.term)), text("dd", c.explain)])));
-}
-
-/* Senior questions */
-if (has(L.seniorQuestions)) {
-  section("questions", "What a senior would ask", h("div", null,
-    h("p", { class: "lead" }, "Try answering before you open each one."),
-    L.seniorQuestions.map((q) => h("details", { class: "q" }, text("summary", q.q), text("p", q.a)))));
+  section("concepts", "Key terms", h("div", { class: "grid" }, L.concepts.map((c) => h("dl", { class: "card term" },
+    h("dt", { dir: "auto" }, h("mark", null, c.term)), text("dd", c.explain)))), { wide: true });
 }
 
 /* Quiz */
@@ -400,13 +440,12 @@ if (has(L.quiz)) {
     } }, o));
     return h("div", { class: "quiz-item" }, text("div", `${qi + 1}. ${q.q}`, { class: "qtext" }), h("div", { class: "opts" }, buttons), why);
   });
-  section("quiz", "Check yourself", h("div", null, items, score));
+  section("quiz", "Quick check", h("div", null, items, score));
 }
 
 /* Practical challenges: reveal one hint at a time, with a separate solution. */
 if (has(L.challenges)) {
-  section("challenges", "Put it into practice", h("div", null,
-    h("p", { class: "lead" }, "Try each task in your project. Use the hints when you get stuck, then compare your approach with the solution."),
+  section("challenges", "Try it yourself", h("div", null,
     L.challenges.map((c, i) => {
       let revealed = 0;
       const hints = h("ol", { id: `challenge-hints-${i}`, class: "steps", "aria-live": "polite" });
@@ -422,11 +461,18 @@ if (has(L.challenges)) {
         text("h3", `${i + 1}. ${c.title}`), text("p", c.task),
         has(c.where) ? h("div", { class: "where" }, c.where.map(editorLink)) : null,
         has(c.snippets) ? c.snippets.map(codeSnippet) : null,
-        h("h4", null, "How to check your work"),
+        h("h4", null, "Done when"),
         h("ul", { class: "notes" }, c.checks.map((check) => text("li", check))),
         hints, next,
         h("details", { class: "q" }, h("summary", null, "Reveal solution"), text("p", c.solution)));
     })));
+}
+
+/* Senior questions */
+if (has(L.seniorQuestions)) {
+  section("questions", "Senior questions", h("div", null,
+    h("p", { class: "lead" }, "Answer in your head first, then open."),
+    L.seniorQuestions.map((q) => h("details", { class: "q" }, text("summary", q.q), text("p", q.a)))));
 }
 
 /* Resources */
@@ -439,21 +485,33 @@ if (has(L.resources)) {
 const when = L.generatedAt ? new Date(L.generatedAt).toLocaleString() : "";
 app.append(h("footer", null, `Generated by learn${when ? " on " + when : ""}.`));
 
-/* Table of contents with the current section marked */
+/* Section pills with the current section marked, plus a reading progress bar */
 const toc = document.getElementById("toc");
+const nav = toc.parentElement;
 const links = new Map();
 for (const s of sections) {
-  const a = h("a", { href: "#" + s.id }, h("span", null, s.title));
+  const a = h("a", { href: "#" + s.id }, s.title);
   links.set(s.id, a);
   toc.append(h("li", null, a));
 }
 const io = new IntersectionObserver((entries) => {
   for (const e of entries) if (e.isIntersecting) {
     links.forEach((a) => a.classList.remove("active"));
-    links.get(e.target.id)?.classList.add("active");
+    const a = links.get(e.target.id);
+    if (!a) continue;
+    a.classList.add("active");
+    nav.scrollTo?.({ left: a.offsetLeft - nav.clientWidth / 2 + a.offsetWidth / 2 });
   }
 }, { rootMargin: "-20% 0px -70% 0px" });
 sections.forEach((s) => io.observe(document.getElementById(s.id)));
+
+const bar = document.getElementById("progress");
+function updateProgress() {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  bar.style.width = (max > 0 ? Math.min(100, (scrollY / max) * 100) : 100) + "%";
+}
+addEventListener("scroll", updateProgress, { passive: true });
+updateProgress();
 
 /* Diagrams: Mermaid themed from the page tokens, re-rendered on theme change */
 let mermaid;
@@ -473,7 +531,7 @@ async function renderDiagrams() {
     startOnLoad: false,
     securityLevel: "strict",
     theme: "base",
-    fontFamily: "Literata, Georgia, serif",
+    fontFamily: v("--sans"),
     themeVariables: {
       background: v("--sheet"),
       primaryColor: v("--paper"),

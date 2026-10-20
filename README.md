@@ -53,18 +53,19 @@ Each lesson is saved to `.learn/<date>-<topic>.html` in your repo, and `.learn/i
 
 ## What a lesson contains
 
-Sections only appear when they apply. A CSS refactor will not get a database section.
+Lessons are short on purpose: about 5 minutes of reading. Sections only appear when they apply, so a CSS refactor will not get a database section.
 
-- **What you built**: a three-line summary, a 30-second explanation in your own voice, and the files that matter
-- **Architecture**: a diagram of the components and how they connect
+- **Takeaways**: three numbered lines, a 30-second explanation in your own voice, and the files that matter (collapsed)
+- **How it fits together**: a diagram of the components and how they connect
 - **How a request moves**: sequence diagrams with a plain-language walkthrough
-- **Patterns you used**: each pattern explained in general, then in your code, with clickable `file:line` links (they open in VS Code) and what it gains and costs
+- **Key code**: short, exact source excerpts with file links, line ranges, and explanations
+- **Patterns**: cards with the idea, how your code uses it, clickable `file:line` links (they open in VS Code), and trade-offs on demand
 - **Data and cache**: ER diagram, why each table exists, cache keys, TTLs and strategy
-- **Words to know**, **What a senior would ask**, **Check yourself** (quiz), **Go deeper** (curated links)
-- **Inside the code**: short, exact source excerpts with file links, line ranges, and explanations. Excerpts can also appear beside individual patterns and challenges.
-- **Put it into practice**: concrete tasks, observable checks, hints revealed one at a time, and a separate solution. Exercises are self-guided; the page does not execute code or grade your work.
+- **Key terms**, **Quick check** (quiz), **Try it yourself** (a task with hints revealed one at a time and a separate solution), **Senior questions**, **Go deeper** (curated links)
 
-Light and dark themes, works on phones, prints cleanly.
+Sticky section bar with reading progress, light and dark themes, set in Atkinson Hyperlegible for easy reading. Works on phones and prints cleanly.
+
+`render.mjs` warns when a lesson runs over its length budget (for example more than 3 patterns or 1,100 words of prose), and the skill trims it before you see it.
 
 ## How it works
 

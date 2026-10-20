@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join, resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
-import { validate } from "./validate.mjs";
+import { validate, budget } from "./validate.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -78,11 +78,11 @@ function writeIndex(outDir, history) {
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Lessons</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--paper:#F4F6F1;--ink:#1D2530;--muted:#5D6672;--mark:#F5DC4E;--rule:#D8DDD3}
 @media (prefers-color-scheme:dark){:root{--paper:#14181D;--ink:#E5E8EC;--muted:#97A0AB;--mark:#7A6A12;--rule:#2A3038}}
-body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 Literata,Georgia,serif}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 "Atkinson Hyperlegible Next",system-ui,sans-serif}
 main{max-width:44rem;margin:0 auto;padding:3rem 1rem}
 h1{font-size:2.4rem;line-height:1.1;margin:0 0 2rem}
 ul{list-style:none;padding:0;margin:0}li{padding:1.1rem 0;border-top:1px solid var(--rule)}
@@ -105,6 +105,8 @@ try {
 
 const errors = validate(data);
 if (errors.length) fail(`lesson JSON is invalid:\n  - ${errors.join("\n  - ")}`);
+const warnings = budget(data);
+if (warnings.length) console.error(`learn: lesson is over its length budget, trim it and render again:\n  - ${warnings.join("\n  - ")}`);
 
 const now = new Date();
 const date = now.toISOString().slice(0, 10);

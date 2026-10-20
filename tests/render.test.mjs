@@ -106,3 +106,17 @@ test("malformed optional sections fail cleanly before writing output", () => {
     assert.doesNotMatch(res.stderr, /TypeError/);
   }
 });
+
+test("over-budget lessons render with a trim warning", () => {
+  const res = run({ title: "Long", tldr: ["a", "b", "c", "d"], quiz: Array(5).fill({ q: "q", options: ["a", "b"], answer: 0 }) });
+  assert.equal(res.status, 0, res.stderr);
+  assert.match(res.stderr, /length budget/);
+  assert.match(res.stderr, /tldr: 4 entries, budget is 3/);
+  assert.match(res.stderr, /quiz: 5 entries, budget is 3/);
+});
+
+test("lessons within budget render without warnings", () => {
+  const res = run(readFileSync(join(root, "examples", "renderer-challenge.json"), "utf8"));
+  assert.equal(res.status, 0, res.stderr);
+  assert.equal(res.stderr, "");
+});

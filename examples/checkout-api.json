@@ -240,11 +240,6 @@
       "title": "Caching patterns: cache-aside (AWS whitepaper)",
       "url": "https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/caching-patterns.html",
       "kind": "docs"
-    },
-    {
-      "title": "Designing Data-Intensive Applications, chapter 11",
-      "url": "https://dataintensive.net/",
-      "kind": "book"
     }
   ]
 }
