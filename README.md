@@ -119,6 +119,16 @@ npm test
 
 Lesson text is always inserted with `textContent`, and the JSON is escaped so it cannot close its `<script>` tag. Please keep it that way; the tests check it.
 
+### Releasing
+
+Releases are automatic. Bump the version in one PR:
+
+```bash
+npm run bump -- 0.2.0
+```
+
+This sets the same version in `package.json`, `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (a test fails if they ever disagree). When the PR is merged and the tests pass on `main`, the Release workflow tags `v0.2.0` and publishes a GitHub Release with notes generated from the merged PRs. Pushes that do not change the version release nothing.
+
 ## License
 
 MIT
