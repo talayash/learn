@@ -1,5 +1,7 @@
 # learn
 
+[![Test](https://github.com/talayash/learn/actions/workflows/test.yml/badge.svg)](https://github.com/talayash/learn/actions/workflows/test.yml)
+
 **Type `/learn` after you build something, and get a visual lesson about what you just did.**
 
 A Claude Code plugin. It reads your session and your git diff, then opens a page in your browser that explains your work: the architecture, how a request moves through it, the design patterns you used (with links to the exact lines), your database and cache choices, the words you should know, and a short quiz.
