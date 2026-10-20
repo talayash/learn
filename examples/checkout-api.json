@@ -1,0 +1,250 @@
+{
+  "title": "Idempotent checkout API with a Redis cart cache",
+  "level": "mid",
+  "tldr": [
+    "You added a POST /orders endpoint that turns a cart into an order exactly once, even if the client retries.",
+    "Carts live in Redis for speed; orders are written to Postgres in one transaction together with an outbox row.",
+    "A background relay publishes the outbox rows to Kafka, so other services hear about orders without risking lost events."
+  ],
+  "pitch": "I built the checkout endpoint. The client sends an idempotency key, so a retry after a timeout returns the same order instead of charging twice. The cart is cached in Redis, and the order plus its event are saved in one Postgres transaction using the outbox pattern, so we never publish an event for an order that was rolled back.",
+  "stack": [
+    "Spring Boot 3",
+    "PostgreSQL",
+    "Redis",
+    "Kafka"
+  ],
+  "files": [
+    {
+      "path": "order-api/src/main/java/com/shop/order/CheckoutController.java",
+      "role": "HTTP entry point, reads the Idempotency-Key header",
+      "change": "added"
+    },
+    {
+      "path": "order-api/src/main/java/com/shop/order/CheckoutService.java",
+      "role": "Transaction boundary: order + outbox row",
+      "change": "added"
+    },
+    {
+      "path": "order-api/src/main/java/com/shop/cart/CartCache.java",
+      "role": "Cache-aside reads of the cart from Redis",
+      "change": "modified"
+    },
+    {
+      "path": "order-api/src/main/java/com/shop/outbox/OutboxRelay.java",
+      "role": "Scheduled job that publishes outbox rows to Kafka",
+      "change": "added"
+    },
+    {
+      "path": "order-api/src/main/resources/db/migration/V7__orders_outbox.sql",
+      "role": "Creates orders, order_lines, outbox, idempotency_keys",
+      "change": "added"
+    }
+  ],
+  "architecture": {
+    "mermaid": "flowchart LR\n  client[Web client] -->|POST /orders| api[Checkout API]\n  api -->|read cart| redis[(Redis)]\n  api -->|1 transaction| pg[(Postgres)]\n  relay[Outbox relay] -->|poll unsent rows| pg\n  relay -->|publish OrderPlaced| kafka[[Kafka]]\n  kafka --> billing[Billing service]\n  kafka --> email[Email service]",
+    "notes": [
+      "The API never talks to Kafka directly. It only writes to Postgres; the relay does the publishing.",
+      "Redis holds carts only. If Redis is empty the API rebuilds the cart from Postgres (cache-aside)."
+    ]
+  },
+  "flows": [
+    {
+      "name": "Place an order (first try)",
+      "mermaid": "sequenceDiagram\n  participant C as Client\n  participant A as Checkout API\n  participant R as Redis\n  participant P as Postgres\n  C->>A: POST /orders (Idempotency-Key: k1)\n  A->>P: insert idempotency_keys(k1) or conflict\n  A->>R: GET cart:42\n  R-->>A: cart\n  A->>P: BEGIN, insert order, lines, outbox, COMMIT\n  A-->>C: 201 Created (order 900)",
+      "steps": [
+        "The client sends the cart id and a random Idempotency-Key it generated.",
+        "The API claims the key in Postgres. A unique index makes a second claim fail.",
+        "The cart is read from Redis, falling back to Postgres on a miss.",
+        "Order, order lines and the outbox event are written in one transaction.",
+        "The response is stored against the key so retries can replay it."
+      ]
+    },
+    {
+      "name": "Client retries after a timeout",
+      "mermaid": "sequenceDiagram\n  participant C as Client\n  participant A as Checkout API\n  participant P as Postgres\n  C->>A: POST /orders (Idempotency-Key: k1)\n  A->>P: insert idempotency_keys(k1)\n  P-->>A: unique violation\n  A->>P: select stored response for k1\n  A-->>C: 201 Created (order 900, replayed)",
+      "steps": [
+        "Same key arrives again, so the insert hits the unique index.",
+        "The API returns the stored response. No second order, no second charge."
+      ]
+    }
+  ],
+  "patterns": [
+    {
+      "name": "Idempotency key",
+      "category": "resilience",
+      "what": "The client tags a request with a unique key so the server can recognize and safely ignore repeats.",
+      "here": "CheckoutController reads the Idempotency-Key header and CheckoutService claims it with an insert on a unique column before doing any work.",
+      "where": [
+        "order-api/src/main/java/com/shop/order/CheckoutController.java:31",
+        "order-api/src/main/java/com/shop/order/CheckoutService.java:48"
+      ],
+      "tradeoffs": {
+        "pros": [
+          "Retries are safe, so clients and gateways can retry on timeout.",
+          "Duplicate charges become impossible by construction."
+        ],
+        "cons": [
+          "You must store keys and responses, and expire them.",
+          "Clients have to generate and resend the key correctly."
+        ]
+      }
+    },
+    {
+      "name": "Transactional outbox",
+      "category": "data",
+      "what": "Write the event to a table in the same transaction as the business data, and publish it later from that table.",
+      "here": "CheckoutService inserts into outbox inside the order transaction; OutboxRelay polls unsent rows every second and publishes them.",
+      "where": [
+        "order-api/src/main/java/com/shop/order/CheckoutService.java:72",
+        "order-api/src/main/java/com/shop/outbox/OutboxRelay.java:22"
+      ],
+      "tradeoffs": {
+        "pros": [
+          "No lost events and no events for rolled-back orders.",
+          "Kafka can be down without failing checkout."
+        ],
+        "cons": [
+          "Delivery is at-least-once, so consumers must de-duplicate.",
+          "A small delay between commit and publish."
+        ]
+      }
+    },
+    {
+      "name": "Cache-aside",
+      "category": "data",
+      "what": "The application reads from the cache first and loads from the database on a miss, then fills the cache.",
+      "here": "CartCache.get tries Redis, falls back to CartRepository, and writes the result back with a 30 minute TTL.",
+      "where": [
+        "order-api/src/main/java/com/shop/cart/CartCache.java:19"
+      ],
+      "tradeoffs": {
+        "pros": [
+          "Simple, and the cache can be flushed at any time.",
+          "Only data that is read gets cached."
+        ],
+        "cons": [
+          "First read after a miss is slow.",
+          "Stale data until TTL expiry or explicit eviction."
+        ]
+      }
+    }
+  ],
+  "data": {
+    "erMermaid": "erDiagram\n  ORDERS ||--|{ ORDER_LINES : contains\n  ORDERS ||--o{ OUTBOX : emits\n  IDEMPOTENCY_KEYS |o--o| ORDERS : resolves_to\n  ORDERS {\n    bigint id PK\n    bigint customer_id\n    numeric total\n    timestamptz created_at\n  }\n  OUTBOX {\n    bigint id PK\n    text type\n    jsonb payload\n    timestamptz sent_at\n  }",
+    "tables": [
+      {
+        "name": "orders",
+        "why": "One row per placed order."
+      },
+      {
+        "name": "order_lines",
+        "why": "The items of an order, copied from the cart at checkout time so later price changes do not rewrite history."
+      },
+      {
+        "name": "outbox",
+        "why": "Events waiting to be published. sent_at is null until the relay publishes it."
+      },
+      {
+        "name": "idempotency_keys",
+        "why": "Unique key per checkout attempt, with the stored response for replays. Expired after 24h."
+      }
+    ],
+    "cache": [
+      {
+        "key": "cart:{customerId}",
+        "ttl": "30m",
+        "strategy": "cache-aside",
+        "why": "Carts are read on every page; Postgres stays the source of truth."
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "term": "Idempotent",
+      "explain": "Doing it twice has the same effect as doing it once. GET and PUT are idempotent by design; POST is not unless you make it so."
+    },
+    {
+      "term": "At-least-once delivery",
+      "explain": "Every message arrives, but some may arrive more than once. Consumers handle this by ignoring messages they have already processed."
+    },
+    {
+      "term": "Unique index",
+      "explain": "A database rule that rejects a second row with the same value. Here it is the lock that stops double checkouts."
+    },
+    {
+      "term": "TTL",
+      "explain": "Time to live. How long a cached value is kept before it expires."
+    }
+  ],
+  "seniorQuestions": [
+    {
+      "q": "What happens if two requests with the same key arrive at the same moment?",
+      "a": "Both try the insert; the unique index lets exactly one win. The loser sees the conflict and waits for or replays the stored response."
+    },
+    {
+      "q": "What if the relay publishes to Kafka and crashes before marking the row as sent?",
+      "a": "The row is published again on restart. That is why consumers must be idempotent too, for example by tracking processed event ids."
+    },
+    {
+      "q": "Why not publish to Kafka inside the transaction?",
+      "a": "Kafka is not part of the Postgres transaction. A commit could succeed after a publish, or fail after it, leaving the two out of sync."
+    }
+  ],
+  "quiz": [
+    {
+      "q": "A client times out and retries POST /orders with the same Idempotency-Key. What does the API return?",
+      "options": [
+        "A new order",
+        "409 Conflict",
+        "The same order it created the first time",
+        "500 because the key exists"
+      ],
+      "answer": 2,
+      "why": "The stored response is replayed, so the client gets the original order."
+    },
+    {
+      "q": "Why is the outbox row written in the same transaction as the order?",
+      "options": [
+        "It is faster",
+        "So the event exists if and only if the order exists",
+        "Kafka requires it",
+        "To avoid needing Redis"
+      ],
+      "answer": 1,
+      "why": "One transaction means both are committed or neither is."
+    },
+    {
+      "q": "Redis is flushed. What happens to the next checkout?",
+      "options": [
+        "It fails",
+        "It reads the cart from Postgres and refills Redis",
+        "It creates an empty order",
+        "It waits for Redis to warm up"
+      ],
+      "answer": 1,
+      "why": "That is cache-aside: a miss falls back to the source of truth."
+    }
+  ],
+  "resources": [
+    {
+      "title": "Transactional outbox pattern (microservices.io)",
+      "url": "https://microservices.io/patterns/data/transactional-outbox.html",
+      "kind": "article"
+    },
+    {
+      "title": "Idempotent requests (Stripe API docs)",
+      "url": "https://docs.stripe.com/api/idempotent_requests",
+      "kind": "docs"
+    },
+    {
+      "title": "Caching patterns: cache-aside (AWS whitepaper)",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/caching-patterns.html",
+      "kind": "docs"
+    },
+    {
+      "title": "Designing Data-Intensive Applications, chapter 11",
+      "url": "https://dataintensive.net/",
+      "kind": "book"
+    }
+  ]
+}
